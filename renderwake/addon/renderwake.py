@@ -7,7 +7,7 @@ bl_info = {
     "description": "Prevents system sleep while Blender is rendering; allows sleep when not rendering.",
     "category": "System",
 }
- 
+
 import bpy
 import sys
 import subprocess
