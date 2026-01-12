@@ -8,7 +8,7 @@ maintainer = "Richies 3D Ltd"
 type = "add-on"
 
 # Works on 3.6 LTS onward.
-blender_version_min = "3.6.0"
+blender_version_min = "4.2.0"
 
 license = ["SPDX:GPL-3.0-or-later"]
 
