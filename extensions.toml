@@ -1,0 +1,23 @@
+schema_version = "1.0.0"
+
+id = "renderwake"
+name = "RenderWake"
+version = "1.2.0"
+tagline = "Keeps your computer awake while Blender renders"
+maintainer = "Richies 3D Ltd"
+type = "addon"
+
+# Works on 3.6 LTS onward.
+blender_version_min = "3.6.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+
+website = "https://richies.uk"  # optional
+# repository = "https://..."     # optional
+
+[permissions]
+network = false
+filesystem = false
+
+[tags]
+category = "System"
