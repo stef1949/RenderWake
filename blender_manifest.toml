@@ -15,5 +15,4 @@ license = ["SPDX:GPL-3.0-or-later"]
 website = "https://richies.uk"  
 # repository = "https://github.com/stef1949/RenderWake"    
 
-[tags]
-category = "System"
+tags = ["System"]
