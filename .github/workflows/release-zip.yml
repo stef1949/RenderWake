@@ -41,7 +41,7 @@ jobs:
           find . -maxdepth 4 -print
 
           test -d "$EXT_DIR"
-          test -f "$EXT_DIR/extension.toml"
+          test -f "$EXT_DIR/blender_manifest.toml"
           test -f "$EXT_DIR/README.md"
           test -d "$EXT_DIR/addon"
 
