@@ -12,8 +12,8 @@ blender_version_min = "3.6.0"
 
 license = ["SPDX:GPL-3.0-or-later"]
 
-website = "https://richies.uk"  # optional
-# repository = "https://..."     # optional
+website = "https://richies.uk"  
+# repository = "https://github.com/stef1949/RenderWake"    
 
 [permissions]
 network = false
