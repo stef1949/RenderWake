@@ -50,16 +50,22 @@ jobs:
       - name: Create ZIP
         shell: bash
         run: |
-          EXT_DIR="."
           VERSION="${{ steps.vars.outputs.version }}"
           ZIP_NAME="renderwake-${VERSION}.zip"
 
-          zip -r "$ZIP_NAME" "$EXT_DIR" \
-            -x "**/.DS_Store" "**/__pycache__/**" "**/*.pyc" \
-            -x ".git/**" "**/.git/**" \
-            -x ".github/**" "**/.github/**" \
-            -x ".external/**" "**/.external/**" \
-            -x ".gitignore" "**/.gitignore"
+          STAGE_DIR="$(mktemp -d)"
+          rsync -a --delete \
+            --exclude=".git/" \
+            --exclude=".github/" \
+            --exclude=".external/" \
+            --exclude="__pycache__/" \
+            --exclude="*.pyc" \
+            --exclude=".DS_Store" \
+            --exclude=".gitignore" \
+            ./ "$STAGE_DIR/"
+
+          (cd "$STAGE_DIR" && zip -r "$GITHUB_WORKSPACE/$ZIP_NAME" .)
+          rm -rf "$STAGE_DIR"
 
           echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
           ls -lh "$ZIP_NAME"
