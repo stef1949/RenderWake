@@ -1,4 +1,4 @@
-name: Build & Attach Extension ZIP to Release
+name: Build, Sign & Attach Extension ZIP to Release
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
       - "v*"
 
 permissions:
-  contents: write  # required to upload assets to releases
+  contents: write
 
 jobs:
-  zip-and-upload:
+  build-sign-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,12 +20,11 @@ jobs:
         id: vars
         shell: bash
         run: |
-          TAG="${GITHUB_REF_NAME}"      
-          VERSION="${TAG#v}"            
+          TAG="${GITHUB_REF_NAME}"      # e.g. v1.2.0
+          VERSION="${TAG#v}"            # 1.2.0
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      # Adjust EXT_DIR if your extension folder name differs
       - name: Verify extension structure
         shell: bash
         run: |
@@ -33,26 +32,116 @@ jobs:
           test -f "$EXT_DIR/extension.toml"
           test -f "$EXT_DIR/README.md"
           test -d "$EXT_DIR/addon"
-          echo "Extension structure OK: $EXT_DIR"
+          echo "Extension structure OK"
 
       - name: Create ZIP
         shell: bash
         run: |
           EXT_DIR="renderwake"
-          ZIP_NAME="${EXT_DIR}-${{ steps.vars.outputs.version }}.zip"
+          VERSION="${{ steps.vars.outputs.version }}"
+          ZIP_NAME="${EXT_DIR}-${VERSION}.zip"
 
-          # Create zip with the folder at the root of the archive:
-          # renderwake/extension.toml, renderwake/addon/..., etc.
           zip -r "$ZIP_NAME" "$EXT_DIR" \
             -x "**/.DS_Store" "**/__pycache__/**" "**/*.pyc"
 
-          echo "Created $ZIP_NAME"
+          echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
           ls -lh "$ZIP_NAME"
 
-      # Uploads to an existing Release for this tag; will also create a Release if missing.
-      - name: Upload ZIP to GitHub Release
+      - name: Generate SHA256 checksum
+        shell: bash
+        run: |
+          sha256sum "$ZIP_NAME" > "$ZIP_NAME.sha256"
+          echo "SHA256_FILE=$ZIP_NAME.sha256" >> "$GITHUB_ENV"
+          cat "$ZIP_NAME.sha256"
+
+      # -------------------------
+      # GPG signing
+      # -------------------------
+      # REQUIRED secrets:
+      #  - GPG_PRIVATE_KEY   (ASCII-armored private key, includes header/footer)
+      # Optional secrets:
+      #  - GPG_PASSPHRASE    (if your key is passphrase-protected)
+      # Optional variables:
+      #  - GPG_KEY_ID        (if you want to force a specific key id/fingerprint)
+      - name: Import GPG key
+        shell: bash
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+          # Optional: set ultimate trust for imported key(s) to avoid "untrusted" warnings
+          # This trusts all imported keys; OK for CI where the key comes from secrets.
+          for fpr in $(gpg --batch --list-secret-keys --with-colons | awk -F: '/^fpr:/ {print $10}'); do
+            echo "$fpr:6:" | gpg --batch --import-ownertrust
+          done
+
+      - name: Sign ZIP (detached signature)
+        shell: bash
+        env:
+          GPG_TTY: /dev/tty
+        run: |
+          SIG_FILE="$ZIP_NAME.asc"
+          echo "SIG_FILE=$SIG_FILE" >> "$GITHUB_ENV"
+
+          # If you set a passphrase, use loopback pinentry.
+          if [ -n "${{ secrets.GPG_PASSPHRASE }}" ]; then
+            gpg --batch --yes --pinentry-mode loopback \
+              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
+              --armor --detach-sign "$ZIP_NAME"
+          else
+            gpg --batch --yes --armor --detach-sign "$ZIP_NAME"
+          fi
+
+          ls -lh "$SIG_FILE"
+
+      - name: Create or update GitHub Release and upload assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            renderwake-${{ steps.vars.outputs.version }}.zip
+            ${{ env.ZIP_NAME }}
+            ${{ env.SHA256_FILE }}
+            ${{ env.SIG_FILE }}
           generate_release_notes: true
+
+      # -------------------------
+      # Append verification instructions to release notes
+      # -------------------------
+      - name: Append checksum/signature verification instructions to release notes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const tag = context.ref.replace('refs/tags/', '');
+            const zip = process.env.ZIP_NAME;
+            const sha = process.env.SHA256_FILE;
+            const asc = process.env.SIG_FILE;
+
+            const rel = await github.rest.repos.getReleaseByTag({ owner, repo, tag });
+
+            const marker = "## Verify downloads";
+            const block = `${marker}
+
+            **SHA-256**
+            \`\`\`bash
+            sha256sum -c ${sha}
+            \`\`\`
+
+            **GPG signature**
+            \`\`\`bash
+            # Import the maintainer public key, then verify:
+            gpg --verify ${asc} ${zip}
+            \`\`\`
+            `;
+
+            const body = rel.data.body || "";
+            const newBody = body.includes(marker)
+              ? body
+              : `${body}\n\n${block}`.trim();
+
+            await github.rest.repos.updateRelease({
+              owner,
+              repo,
+              release_id: rel.data.id,
+              body: newBody,
+            });
+ 
