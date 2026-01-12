@@ -2,7 +2,7 @@ schema_version = "1.0.0"
 
 id = "renderwake"
 name = "RenderWake"
-version = "1.2.6"
+version = "1.2.7"
 tagline = "Keeps your computer awake while Blender renders"
 maintainer = "Richies 3D Ltd"
 type = "add-on"
@@ -14,10 +14,6 @@ license = ["SPDX:GPL-3.0-or-later"]
 
 website = "https://richies.uk"  
 # repository = "https://github.com/stef1949/RenderWake"    
-
-[permissions]
-network = false
-filesystem = false
 
 [tags]
 category = "System"
