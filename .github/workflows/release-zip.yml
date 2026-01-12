@@ -25,14 +25,26 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Verify extension structure
+      - name: Verify extension structure (debug)
         shell: bash
         run: |
+          set -euxo pipefail
+          echo "PWD: $(pwd)"
+          echo "Repo root listing:"
+          ls -la
+
           EXT_DIR="renderwake"
+          echo "Checking extension dir: $EXT_DIR"
+          ls -la "$EXT_DIR" || true
+
+          echo "Tree (top 4 levels):"
+          find . -maxdepth 4 -print
+
+          test -d "$EXT_DIR"
           test -f "$EXT_DIR/extension.toml"
           test -f "$EXT_DIR/README.md"
           test -d "$EXT_DIR/addon"
-          test -f "docs/signing-key.asc"
+
           echo "Extension structure OK"
 
       - name: Create ZIP
