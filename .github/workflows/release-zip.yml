@@ -33,7 +33,7 @@ jobs:
           echo "Repo root listing:"
           ls -la
 
-          EXT_DIR="renderwake"
+          EXT_DIR="."
           echo "Checking extension dir: $EXT_DIR"
           ls -la "$EXT_DIR" || true
 
@@ -50,12 +50,13 @@ jobs:
       - name: Create ZIP
         shell: bash
         run: |
-          EXT_DIR="renderwake"
+          EXT_DIR="."
           VERSION="${{ steps.vars.outputs.version }}"
-          ZIP_NAME="${EXT_DIR}-${VERSION}.zip"
+          ZIP_NAME="renderwake-${VERSION}.zip"
 
           zip -r "$ZIP_NAME" "$EXT_DIR" \
-            -x "**/.DS_Store" "**/__pycache__/**" "**/*.pyc"
+            -x "**/.DS_Store" "**/__pycache__/**" "**/*.pyc" \
+            -x ".git/**" ".github/**" ".external/**" ".gitignore"
 
           echo "ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
           ls -lh "$ZIP_NAME"
