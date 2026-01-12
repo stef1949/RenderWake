@@ -1,0 +1,58 @@
+name: Build & Attach Extension ZIP to Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write  # required to upload assets to releases
+
+jobs:
+  zip-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine version from tag
+        id: vars
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"      # e.g. v1.2.0
+          VERSION="${TAG#v}"            # 1.2.0
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # Adjust EXT_DIR if your extension folder name differs
+      - name: Verify extension structure
+        shell: bash
+        run: |
+          EXT_DIR="renderwake"
+          test -f "$EXT_DIR/extension.toml"
+          test -f "$EXT_DIR/README.md"
+          test -d "$EXT_DIR/addon"
+          echo "Extension structure OK: $EXT_DIR"
+
+      - name: Create ZIP
+        shell: bash
+        run: |
+          EXT_DIR="renderwake"
+          ZIP_NAME="${EXT_DIR}-${{ steps.vars.outputs.version }}.zip"
+
+          # Create zip with the folder at the root of the archive:
+          # renderwake/extension.toml, renderwake/addon/..., etc.
+          zip -r "$ZIP_NAME" "$EXT_DIR" \
+            -x "**/.DS_Store" "**/__pycache__/**" "**/*.pyc"
+
+          echo "Created $ZIP_NAME"
+          ls -lh "$ZIP_NAME"
+
+      # Uploads to an existing Release for this tag; will also create a Release if missing.
+      - name: Upload ZIP to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            renderwake-${{ steps.vars.outputs.version }}.zip
+          generate_release_notes: true
