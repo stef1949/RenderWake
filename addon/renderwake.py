@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Keep Awake While Rendering",
     "author": "Richies3D Ltd",
-    "version": (1, 2, 2),
+    "version": (1, 2, 4),
     "blender": (3, 0, 0),
     "location": "Preferences > Add-ons > Keep Awake While Rendering",
     "description": "Prevents system sleep while Blender is rendering; allows sleep when not rendering.",
