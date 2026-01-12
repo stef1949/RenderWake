@@ -14,6 +14,13 @@ import subprocess
 import atexit
 
 
+def _addon_idname() -> str:
+    pkg = __package__ or __name__
+    if pkg.endswith(".addon"):
+        return pkg[:-len(".addon")]
+    return pkg.split(".")[0]
+
+
 # -----------------------------------------------------------------------------
 # Platform wake lock implementations
 # -----------------------------------------------------------------------------
@@ -240,7 +247,7 @@ def draw_status_indicator(self, context):
 # -----------------------------------------------------------------------------
 
 class KeepAwakePreferences(bpy.types.AddonPreferences):
-    bl_idname = __name__
+    bl_idname = _addon_idname()
 
     enabled: bpy.props.BoolProperty = bpy.props.BoolProperty(
         name="Enable",
