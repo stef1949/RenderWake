@@ -1,8 +1,8 @@
 bl_info = {
     "name": "Keep Awake While Rendering",
     "author": "Richies3D Ltd",
-    "version": (1, 2, 5),
-    "blender": (3, 0, 0),
+    "version": (1, 2, 10),
+    "blender": (3, 6, 0),
     "location": "Preferences > Add-ons > Keep Awake While Rendering",
     "description": "Prevents system sleep while Blender is rendering; allows sleep when not rendering.",
     "category": "System",
@@ -123,7 +123,7 @@ _wakelock = make_wakelock()
 
 def _safe_get_prefs():
     try:
-        addon = bpy.context.preferences.addons.get(__name__)
+        addon = bpy.context.preferences.addons.get(_addon_idname())
         return addon.preferences if addon else None
     except Exception:
         return None
