@@ -5,7 +5,7 @@ name = "RenderWake"
 version = "1.2.3"
 tagline = "Keeps your computer awake while Blender renders"
 maintainer = "Richies 3D Ltd"
-type = "addon"
+type = "add-on"
 
 # Works on 3.6 LTS onward.
 blender_version_min = "3.6.0"
