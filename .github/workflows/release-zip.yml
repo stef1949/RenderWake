@@ -71,7 +71,10 @@ jobs:
       - name: Import GPG key
         shell: bash
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          KEY_FILE="$(mktemp)"
+          printf '%s' "${{ secrets.GPG_PRIVATE_KEY }}" > "$KEY_FILE"
+          gpg --batch --import "$KEY_FILE"
+          rm -f "$KEY_FILE"
           for fpr in $(gpg --batch --list-secret-keys --with-colons | awk -F: '/^fpr:/ {print $10}'); do
             echo "$fpr:6:" | gpg --batch --import-ownertrust
           done
@@ -83,9 +86,10 @@ jobs:
           echo "SIG_FILE=$SIG_FILE" >> "$GITHUB_ENV"
 
           if [ -n "${{ secrets.GPG_PASSPHRASE }}" ]; then
-            gpg --batch --yes --pinentry-mode loopback \
-              --passphrase "${{ secrets.GPG_PASSPHRASE }}" \
-              --armor --detach-sign "$ZIP_NAME"
+            printf '%s' "${{ secrets.GPG_PASSPHRASE }}" | \
+              gpg --batch --yes --pinentry-mode loopback \
+                --passphrase-fd 0 \
+                --armor --detach-sign "$ZIP_NAME"
           else
             gpg --batch --yes --armor --detach-sign "$ZIP_NAME"
           fi
